@@ -3,20 +3,17 @@ import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type ThemeMode = 'light' | 'dark' | 'system';
-type Language = 'es' | 'en';
 type FontSize = 'small' | 'medium' | 'large' | 'xlarge';
 
 interface Settings {
   themeMode: ThemeMode;
-  language: Language;
   fontSize: FontSize;
 }
 
 interface SettingsContextValue {
-  settings: Settings;
+  settings: Settings & { language: 'es' }; // always 'es', kept for compatibility
   effectiveTheme: 'light' | 'dark';
   updateThemeMode: (mode: ThemeMode) => void;
-  updateLanguage: (lang: Language) => void;
   updateFontSize: (size: FontSize) => void;
   isLoading: boolean;
 }
@@ -25,7 +22,6 @@ const SETTINGS_KEY = '@himnario_settings';
 
 const DEFAULT_SETTINGS: Settings = {
   themeMode: 'system',
-  language: 'es',
   fontSize: 'medium',
 };
 
@@ -44,7 +40,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     try {
       const stored = await AsyncStorage.getItem(SETTINGS_KEY);
       if (stored) {
-        setSettings(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        // Strip old language field if present
+        const { language, ...rest } = parsed;
+        setSettings({ ...DEFAULT_SETTINGS, ...rest });
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -73,10 +72,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     saveSettings({ ...settings, themeMode: mode });
   };
 
-  const updateLanguage = (lang: Language) => {
-    saveSettings({ ...settings, language: lang });
-  };
-
   const updateFontSize = (size: FontSize) => {
     saveSettings({ ...settings, fontSize: size });
   };
@@ -84,10 +79,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   return (
     <SettingsContext.Provider
       value={{
-        settings,
+        settings: { ...settings, language: 'es' },
         effectiveTheme,
         updateThemeMode,
-        updateLanguage,
         updateFontSize,
         isLoading,
       }}

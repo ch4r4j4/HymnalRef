@@ -3,21 +3,56 @@ import { useState, useMemo, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, X } from 'lucide-react-native';
-import { hymns, searchHymns } from '@/constants/hymns';
+import { hymns, searchHymns, SearchMatch } from '@/constants/hymns';
 import { useSettings } from '@/contexts/SettingsContext';
 import { lightTheme, darkTheme, fontSizes } from '@/constants/theme';
+
+// Renders text with the matched query word highlighted in primary color
+function HighlightedText({
+  text,
+  highlight,
+  baseStyle,
+  highlightColor,
+}: {
+  text: string;
+  highlight: string;
+  baseStyle: object;
+  highlightColor: string;
+}) {
+  if (!highlight.trim()) {
+    return <Text style={baseStyle}>{text}</Text>;
+  }
+
+  // Case-insensitive split keeping the delimiter
+  const regex = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  const parts = text.split(regex);
+
+  return (
+    <Text style={baseStyle}>
+      {parts.map((part, i) =>
+        part.toLowerCase() === highlight.toLowerCase() ? (
+          <Text key={i} style={{ color: highlightColor, fontWeight: '700' as const }}>
+            {part}
+          </Text>
+        ) : (
+          <Text key={i}>{part}</Text>
+        )
+      )}
+    </Text>
+  );
+}
 
 export default function HomeScreen() {
   const router = useRouter();
   const { settings, effectiveTheme } = useSettings();
   const theme = effectiveTheme === 'dark' ? darkTheme : lightTheme;
   const fonts = fontSizes[settings.fontSize];
-  
+
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredHymns = useMemo(() => {
-    return searchHymns(searchQuery, settings.language);
-  }, [searchQuery, settings.language]);
+  const searchResults = useMemo(() => {
+    return searchHymns(searchQuery);
+  }, [searchQuery]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -32,27 +67,44 @@ export default function HomeScreen() {
     })
   ).current;
 
-  const renderHymnItem = ({ item }: { item: typeof hymns[0] }) => {
-    const hymnData = item.idiomas[settings.language];
-    
+  const renderHymnItem = ({ item }: { item: SearchMatch }) => {
+    const { hymn, snippet, matchWord } = item;
+    const firstLine = hymn.versos[0]?.split('\n')[0] ?? '';
+
     return (
       <TouchableOpacity
         style={[styles.hymnCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}
-        onPress={() => router.push(`/hymn/${item.id}`)}
+        onPress={() => router.push(`/hymn/${hymn.id}`)}
         activeOpacity={0.7}
       >
         <View style={styles.hymnNumber}>
           <Text style={[styles.numberText, { color: theme.primary, fontSize: fonts.title }]}>
-            {item.numero}
+            {hymn.numero}
           </Text>
         </View>
         <View style={styles.hymnInfo}>
-          <Text style={[styles.hymnTitle, { color: theme.text, fontSize: fonts.large }]} numberOfLines={2}>
-            {hymnData.titulo}
+          <Text
+            style={[styles.hymnTitle, { color: theme.text, fontSize: fonts.large }]}
+            numberOfLines={1}
+          >
+            {hymn.titulo}
           </Text>
-          <Text style={[styles.hymnAuthor, { color: theme.textSecondary, fontSize: fonts.base }]} numberOfLines={1}>
-            {hymnData.autor_letra}
-          </Text>
+
+          {snippet && matchWord ? (
+            <HighlightedText
+              text={snippet}
+              highlight={matchWord}
+              baseStyle={[styles.snippet, { color: theme.textSecondary, fontSize: fonts.base }]}
+              highlightColor={theme.primary}
+            />
+          ) : (
+            <Text
+              style={[styles.versePreview, { color: theme.textSecondary, fontSize: fonts.base }]}
+              numberOfLines={1}
+            >
+              {firstLine}
+            </Text>
+          )}
         </View>
       </TouchableOpacity>
     );
@@ -62,12 +114,9 @@ export default function HomeScreen() {
     <View style={[styles.container, { backgroundColor: theme.background }]} {...panResponder.panHandlers}>
       <StatusBar barStyle={effectiveTheme === 'dark' ? 'light-content' : 'dark-content'} />
       <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: theme.text, fontSize: fonts.title }]}>
-            Loores al Rey
-          </Text>
+         <View style={styles.header}>
           <Text style={[styles.headerSubtitle, { color: theme.textSecondary, fontSize: fonts.base }]}>
-            {filteredHymns.length} {settings.language === 'es' ? 'himnos' : 'hymns'}
+            {'Loores al Rey'} {searchResults.length} {'himnos'}
           </Text>
         </View>
 
@@ -88,9 +137,9 @@ export default function HomeScreen() {
         </View>
 
         <FlatList
-          data={filteredHymns}
+          data={searchResults}
           renderItem={renderHymnItem}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item.hymn.id.toString()}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
         />
@@ -100,21 +149,12 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  safeArea: { flex: 1 },
   header: {
     paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  headerTitle: {
-    fontWeight: '700' as const,
-    marginBottom: 4,
-    letterSpacing: -0.5,
+    paddingTop: 8,
+    paddingBottom: 2,
   },
   headerSubtitle: {
     fontWeight: '400' as const,
@@ -122,9 +162,9 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    marginHorizontal: 24,
-    marginTop: 16,
-    marginBottom: 16,
+    marginHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 8,
     paddingHorizontal: 16,
     height: 48,
     borderRadius: 12,
@@ -136,15 +176,15 @@ const styles = StyleSheet.create({
     fontWeight: '400' as const,
   },
   listContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 8,
     paddingBottom: 24,
   },
   hymnCard: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    padding: 16,
+    padding: 10,
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: 4,
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -153,12 +193,12 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   hymnNumber: {
-    width: 64,
-    height: 64,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 10,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
-    marginRight: 16,
+    marginRight: 12,
   },
   numberText: {
     fontWeight: '700' as const,
@@ -168,10 +208,14 @@ const styles = StyleSheet.create({
   },
   hymnTitle: {
     fontWeight: '600' as const,
-    marginBottom: 4,
-    lineHeight: 24,
+    marginBottom: 2,
+    lineHeight: 22,
   },
-  hymnAuthor: {
+  versePreview: {
     fontWeight: '400' as const,
+  },
+  snippet: {
+    fontWeight: '400' as const,
+    lineHeight: 18,
   },
 });

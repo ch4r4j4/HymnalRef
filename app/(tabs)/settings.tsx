@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, StatusBar, PanResponder } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Moon, Sun, Monitor, Globe, Type } from 'lucide-react-native';
+import { Moon, Sun, Monitor, Type } from 'lucide-react-native';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
@@ -8,7 +8,7 @@ import { lightTheme, darkTheme, fontSizes } from '@/constants/theme';
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { settings, effectiveTheme, updateThemeMode, updateLanguage, updateFontSize } = useSettings();
+  const { settings, effectiveTheme, updateThemeMode, updateFontSize } = useSettings();
   const theme = effectiveTheme === 'dark' ? darkTheme : lightTheme;
   const fonts = fontSizes[settings.fontSize];
 
@@ -26,21 +26,16 @@ export default function SettingsScreen() {
   ).current;
 
   const themeOptions = [
-    { value: 'light' as const, label: settings.language === 'es' ? 'Claro' : 'Light', icon: Sun },
-    { value: 'dark' as const, label: settings.language === 'es' ? 'Oscuro' : 'Dark', icon: Moon },
-    { value: 'system' as const, label: settings.language === 'es' ? 'Sistema' : 'System', icon: Monitor },
-  ];
-
-  const languageOptions = [
-    { value: 'es' as const, label: 'Español', flag: '🇪🇸' },
-    { value: 'en' as const, label: 'English', flag: '🇺🇸' },
+    { value: 'light' as const, label: 'Claro', icon: Sun },
+    { value: 'dark' as const, label: 'Oscuro', icon: Moon },
+    { value: 'system' as const, label: 'Sistema', icon: Monitor },
   ];
 
   const fontSizeOptions = [
-    { value: 'small' as const, label: settings.language === 'es' ? 'Pequeño' : 'Small' },
-    { value: 'medium' as const, label: settings.language === 'es' ? 'Mediano' : 'Medium' },
-    { value: 'large' as const, label: settings.language === 'es' ? 'Grande' : 'Large' },
-    { value: 'xlarge' as const, label: settings.language === 'es' ? 'Muy Grande' : 'Extra Large' },
+    { value: 'small' as const, label: 'Pequeño' },
+    { value: 'medium' as const, label: 'Mediano' },
+    { value: 'large' as const, label: 'Grande' },
+    { value: 'xlarge' as const, label: 'Muy Grande' },
   ];
 
   return (
@@ -49,16 +44,18 @@ export default function SettingsScreen() {
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: theme.text, fontSize: fonts.title }]}>
-            {settings.language === 'es' ? 'Ajustes' : 'Settings'}
+            Ajustes
           </Text>
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+
+          {/* Tema */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Moon size={20} color={theme.primary} />
               <Text style={[styles.sectionTitle, { color: theme.text, fontSize: fonts.large }]}>
-                {settings.language === 'es' ? 'Tema' : 'Theme'}
+                Tema
               </Text>
             </View>
             <View style={[styles.optionsContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
@@ -93,49 +90,12 @@ export default function SettingsScreen() {
             </View>
           </View>
 
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Globe size={20} color={theme.primary} />
-              <Text style={[styles.sectionTitle, { color: theme.text, fontSize: fonts.large }]}>
-                {settings.language === 'es' ? 'Idioma de Himnos' : 'Hymn Language'}
-              </Text>
-            </View>
-            <View style={[styles.optionsContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
-              {languageOptions.map((option, index) => {
-                const isSelected = settings.language === option.value;
-                return (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.option,
-                      index < languageOptions.length - 1 && { borderBottomWidth: 1, borderBottomColor: theme.border }
-                    ]}
-                    onPress={() => updateLanguage(option.value)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.optionLeft}>
-                      <Text style={styles.flag}>{option.flag}</Text>
-                      <Text style={[
-                        styles.optionLabel,
-                        { color: isSelected ? theme.primary : theme.text, fontSize: fonts.base }
-                      ]}>
-                        {option.label}
-                      </Text>
-                    </View>
-                    {isSelected && (
-                      <View style={[styles.checkmark, { backgroundColor: theme.primary }]} />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
+          {/* Tamaño de letra */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Type size={20} color={theme.primary} />
               <Text style={[styles.sectionTitle, { color: theme.text, fontSize: fonts.large }]}>
-                {settings.language === 'es' ? 'Tamaño de Letra' : 'Font Size'}
+                Tamaño de Letra
               </Text>
             </View>
             <View style={[styles.optionsContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
@@ -168,12 +128,13 @@ export default function SettingsScreen() {
 
           <View style={styles.footer}>
             <Text style={[styles.footerText, { color: theme.textTertiary, fontSize: fonts.base }]}>
-              {settings.language === 'es' ? 'Himnario Loores al Rey' : 'Loores al Rey Hymnal'}
+              Himnario Loores al Rey
             </Text>
             <Text style={[styles.footerVersion, { color: theme.textTertiary, fontSize: fonts.base }]}>
-              {settings.language === 'es' ? 'Versión 1.0' : 'Version 1.0'}
+              Versión 1.0
             </Text>
           </View>
+
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -181,12 +142,8 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  safeArea: { flex: 1 },
   header: {
     paddingHorizontal: 24,
     paddingTop: 16,
@@ -231,9 +188,6 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontWeight: '500' as const,
     marginLeft: 12,
-  },
-  flag: {
-    fontSize: 22,
   },
   checkmark: {
     width: 20,

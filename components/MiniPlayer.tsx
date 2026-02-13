@@ -38,8 +38,6 @@ export function MiniPlayer() {
 
   const progress = duration > 0 ? position / duration : 0;
   const currentIndex = hymns.findIndex(h => h.id === playingHymn.id);
-  const hasPrev = currentIndex > 0;
-  const hasNext = currentIndex < hymns.length - 1;
 
   const handleTap = () => {
     router.push(`/hymn/${playingHymn.id}`);
@@ -85,14 +83,13 @@ export function MiniPlayer() {
         <View style={styles.controls}>
           <TouchableOpacity
             onPress={(e) => { e.stopPropagation?.(); skipBackward(); }}
-            disabled={!hasPrev}
             style={styles.controlBtn}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <SkipBack
               size={20}
-              color={hasPrev ? theme.text : theme.textTertiary}
-              fill={hasPrev ? theme.text : theme.textTertiary}
+              color={theme.text}
+              fill={theme.text}
             />
           </TouchableOpacity>
 
@@ -112,14 +109,14 @@ export function MiniPlayer() {
 
           <TouchableOpacity
             onPress={(e) => { e.stopPropagation?.(); skipForward(); }}
-            disabled={!hasNext}
+            disabled={currentIndex >= hymns.length - 1}
             style={styles.controlBtn}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <SkipForward
               size={20}
-              color={hasNext ? theme.text : theme.textTertiary}
-              fill={hasNext ? theme.text : theme.textTertiary}
+              color={currentIndex < hymns.length - 1 ? theme.text : theme.textTertiary}
+              fill={currentIndex < hymns.length - 1 ? theme.text : theme.textTertiary}
             />
           </TouchableOpacity>
 

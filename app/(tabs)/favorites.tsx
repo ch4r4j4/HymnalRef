@@ -33,8 +33,8 @@ export default function FavoritesScreen() {
   ).current;
 
   const renderHymnItem = ({ item }: { item: typeof hymns[0] }) => {
-    const hymnData = item.idiomas[settings.language];
-    
+    const firstLine = item.versos[0]?.split('\n')[0] ?? '';
+
     return (
       <TouchableOpacity
         style={[styles.hymnCard, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}
@@ -47,14 +47,14 @@ export default function FavoritesScreen() {
           </Text>
         </View>
         <View style={styles.hymnInfo}>
-          <Text style={[styles.hymnTitle, { color: theme.text, fontSize: fonts.large }]} numberOfLines={2}>
-            {hymnData.titulo}
+          <Text style={[styles.hymnTitle, { color: theme.text, fontSize: fonts.large }]} numberOfLines={1}>
+            {item.titulo}
           </Text>
-          <Text style={[styles.hymnAuthor, { color: theme.textSecondary, fontSize: fonts.base }]} numberOfLines={1}>
-            {hymnData.autor_letra}
+          <Text style={[styles.versePreview, { color: theme.textSecondary, fontSize: fonts.base }]} numberOfLines={1}>
+            {firstLine}
           </Text>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => toggleFavorite(item.id)}
           style={styles.favoriteButton}
           activeOpacity={0.7}
@@ -69,12 +69,10 @@ export default function FavoritesScreen() {
     <View style={styles.emptyContainer}>
       <HeartOff size={64} color={theme.textTertiary} strokeWidth={1.5} />
       <Text style={[styles.emptyTitle, { color: theme.text, fontSize: fonts.large }]}>
-        {settings.language === 'es' ? 'Sin favoritos' : 'No favorites'}
+        Sin favoritos
       </Text>
       <Text style={[styles.emptyText, { color: theme.textSecondary, fontSize: fonts.base }]}>
-        {settings.language === 'es' 
-          ? 'Marca himnos como favoritos para acceder a ellos rápidamente'
-          : 'Mark hymns as favorites to access them quickly'}
+        Marca himnos como favoritos para acceder a ellos rápidamente
       </Text>
     </View>
   );
@@ -85,10 +83,10 @@ export default function FavoritesScreen() {
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: theme.text, fontSize: fonts.title }]}>
-            {settings.language === 'es' ? 'Favoritos' : 'Favorites'}
+            Favoritos
           </Text>
           <Text style={[styles.headerSubtitle, { color: theme.textSecondary, fontSize: fonts.base }]}>
-            {favoriteHymns.length} {settings.language === 'es' ? 'himnos' : 'hymns'}
+            {favoriteHymns.length} himnos
           </Text>
         </View>
 
@@ -109,12 +107,8 @@ export default function FavoritesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  safeArea: { flex: 1 },
   header: {
     paddingHorizontal: 24,
     paddingTop: 16,
@@ -140,9 +134,9 @@ const styles = StyleSheet.create({
   hymnCard: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    padding: 16,
+    padding: 10,
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: 8,
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -151,12 +145,12 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   hymnNumber: {
-    width: 64,
-    height: 64,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 10,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
-    marginRight: 16,
+    marginRight: 12,
   },
   numberText: {
     fontWeight: '700' as const,
@@ -166,10 +160,10 @@ const styles = StyleSheet.create({
   },
   hymnTitle: {
     fontWeight: '600' as const,
-    marginBottom: 4,
-    lineHeight: 24,
+    marginBottom: 2,
+    lineHeight: 22,
   },
-  hymnAuthor: {
+  versePreview: {
     fontWeight: '400' as const,
   },
   favoriteButton: {

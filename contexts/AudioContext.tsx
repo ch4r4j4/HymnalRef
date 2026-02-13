@@ -152,8 +152,35 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     setPlayingHymn(null);
   }, []);
 
-  const skipBackward = useCallback(() => {
-    prevCallbackRef.current?.();
+  const skipBackward = useCallback(async () => {
+    // If more than 3 seconds in, restart current track
+    if (soundRef.current) {
+      try {
+        const status = await soundRef.current.getStatusAsync();
+        if (status.isLoaded && status.positionMillis > 3000) {
+          await soundRef.current.setPositionAsync(0);
+          await soundRef.current.playAsync();
+          setPosition(0);
+          setIsPlaying(true);
+          return;
+        }
+      } catch (error) {
+        console.error('skipBackward status error:', error);
+      }
+    }
+    // Under 3 seconds — go to previous hymn if available, else restart
+    if (prevCallbackRef.current) {
+      prevCallbackRef.current();
+    } else if (soundRef.current) {
+      try {
+        await soundRef.current.setPositionAsync(0);
+        await soundRef.current.playAsync();
+        setPosition(0);
+        setIsPlaying(true);
+      } catch (error) {
+        console.error('skipBackward restart error:', error);
+      }
+    }
   }, []);
 
   const skipForward = useCallback(() => {

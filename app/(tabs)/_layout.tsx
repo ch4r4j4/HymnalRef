@@ -1,8 +1,25 @@
 import { Tabs } from "expo-router";
+import { BottomTabBar } from "@react-navigation/bottom-tabs";
 import { Book, Settings, Heart, HandHeart } from "lucide-react-native";
 import React from 'react';
+import { View } from 'react-native';
 import { useSettings } from "@/contexts/SettingsContext";
 import { lightTheme, darkTheme } from "@/constants/theme";
+import { MiniPlayer } from "@/components/MiniPlayer";
+
+// Custom tab bar: MiniPlayer stacked on top of the real tab bar, no overlap
+function CustomTabBar(props: React.ComponentProps<typeof BottomTabBar>) {
+  const { effectiveTheme } = useSettings();
+  const theme = effectiveTheme === 'dark' ? darkTheme : lightTheme;
+
+  return (
+    <View style={{ backgroundColor: theme.cardBackground }}>
+      {/* MiniPlayer sits here, pushing the tab bar down — no overlap */}
+      <MiniPlayer />
+      <BottomTabBar {...props} />
+    </View>
+  );
+}
 
 export default function TabLayout() {
   const { effectiveTheme, settings } = useSettings();
@@ -10,6 +27,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.textTertiary,
@@ -53,7 +71,6 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => <Settings size={size} color={color} />,
         }}
       />
-      {/* hymn/[id] vive dentro de tabs pero oculto del tab bar */}
       <Tabs.Screen
         name="hymn/[id]"
         options={{

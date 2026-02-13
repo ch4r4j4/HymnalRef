@@ -5,6 +5,7 @@ import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
+import { AudioProvider } from "@/contexts/AudioContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -19,11 +20,14 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <SettingsProvider>
         <FavoritesProvider>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            </Stack>
-          </GestureHandlerRootView>
+          {/* AudioProvider wraps everything so MiniPlayer is accessible globally */}
+          <AudioProvider>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              </Stack>
+            </GestureHandlerRootView>
+          </AudioProvider>
         </FavoritesProvider>
       </SettingsProvider>
     </QueryClientProvider>

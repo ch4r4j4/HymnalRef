@@ -8,49 +8,47 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { hymns } from '@/constants/hymns';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
+import { useAudio } from '@/contexts/AudioContext';
 import { lightTheme, darkTheme, fontSizes } from '@/constants/theme';
-import { Play, Pause, Download, Heart, FileMusic, WifiOff, CheckCircle } from 'lucide-react-native';
-import { Audio } from 'expo-av';
-import { useState, useEffect, useRef } from 'react';
+import { Play, Pause, Download, Heart, FileMusic, CheckCircle } from 'lucide-react-native';
+import { CircularProgress } from '@/components/Circularprogress';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import NetInfo from '@react-native-community/netinfo';
 import * as FileSystem from 'expo-file-system';
-// 👇 Importa la configuración de URLs
 import { getPDFUrl, isMediaConfigured } from '@/constants/media-config';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SWIPE_THRESHOLD = 80;
 const SWIPE_VELOCITY = 0.3;
 
-// Función helper para obtener el directorio de documentos de forma segura
 const getDocumentDirectory = () => {
-  // @ts-ignore - documentDirectory existe en expo-file-system 19.x pero TypeScript no lo detecta correctamente
-  if (FileSystem.documentDirectory) {
-    // @ts-ignore
-    return FileSystem.documentDirectory;
-  }
-  // @ts-ignore - Para versiones que lo exportan diferente
-  if (FileSystem.default?.documentDirectory) {
-    // @ts-ignore
-    return FileSystem.default.documentDirectory;
-  }
+  // @ts-ignore
+  if (FileSystem.documentDirectory) return FileSystem.documentDirectory;
+  // @ts-ignore
+  if (FileSystem.default?.documentDirectory) return FileSystem.default.documentDirectory;
   return '';
 };
 
-// Directorios de cache
 const DOC_DIR = getDocumentDirectory();
 const AUDIO_CACHE_DIR = DOC_DIR ? `${DOC_DIR}audio/` : '';
 const PDF_CACHE_DIR = DOC_DIR ? `${DOC_DIR}pdfs/` : '';
+
+const formatTime = (ms: number): string => {
+  if (!ms || ms <= 0) return '0:00';
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+};
 
 export default function HymnScreen() {
   const { id } = useLocalSearchParams();
   const { settings, effectiveTheme } = useSettings();
   const { toggleFavorite, isFavorite } = useFavorites();
+  const audio = useAudio();
   const theme = effectiveTheme === 'dark' ? darkTheme : lightTheme;
   const fonts = fontSizes[settings.fontSize];
 
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [isDownloadingAudio, setIsDownloadingAudio] = useState(false);
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
@@ -61,8 +59,39 @@ export default function HymnScreen() {
   const hymn = hymns.find(h => h.id === Number(id));
   const currentIndex = hymns.findIndex(h => h.id === Number(id));
 
+  // Is THIS hymn currently playing in the global audio context?
+  const isThisHymnActive = audio.playingHymn?.id === hymn?.id;
+  const isPlaying = isThisHymnActive && audio.isPlaying;
+  const isLoadingAudio = isThisHymnActive && audio.isLoading;
+  const position = isThisHymnActive ? audio.position : 0;
+  const duration = isThisHymnActive ? audio.duration : 0;
+
   const translateX = useRef(new Animated.Value(0)).current;
   const isAnimating = useRef(false);
+
+  // Register navigation callbacks for the MiniPlayer skip buttons
+  const navigateToHymn = useCallback((direction: 'prev' | 'next') => {
+    if (isAnimating.current) return;
+    const targetIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= hymns.length) {
+      Animated.spring(translateX, { toValue: 0, useNativeDriver: true, tension: 200, friction: 15 }).start();
+      return;
+    }
+    isAnimating.current = true;
+    const toValue = direction === 'prev' ? SCREEN_WIDTH : -SCREEN_WIDTH;
+    Animated.timing(translateX, { toValue, duration: 250, useNativeDriver: true }).start(() => {
+      translateX.setValue(0);
+      isAnimating.current = false;
+      router.replace(`/hymn/${hymns[targetIndex].id}`);
+    });
+  }, [currentIndex, translateX]);
+
+  useEffect(() => {
+    audio.setNavigationCallbacks(
+      () => navigateToHymn('prev'),
+      () => navigateToHymn('next'),
+    );
+  }, [navigateToHymn]);
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
@@ -77,7 +106,6 @@ export default function HymnScreen() {
 
   const checkDownloadedFiles = async () => {
     if (!hymn || !AUDIO_CACHE_DIR) return;
-
     try {
       const audioPath = `${AUDIO_CACHE_DIR}hymn_${hymn.numero}.mp3`;
       const audioInfo = await FileSystem.getInfoAsync(audioPath);
@@ -93,7 +121,6 @@ export default function HymnScreen() {
 
   const ensureDirectoryExists = async (directory: string) => {
     if (!directory) return;
-    
     try {
       const dirInfo = await FileSystem.getInfoAsync(directory);
       if (!dirInfo.exists) {
@@ -105,10 +132,12 @@ export default function HymnScreen() {
   };
 
   const downloadAudio = async () => {
-    if (!hymn?.audio.url || !isOnline) {
+    if (!hymn?.audio.url) return;
+
+    if (!isOnline) {
       Alert.alert(
         settings.language === 'es' ? 'Sin conexión' : 'No connection',
-        settings.language === 'es' 
+        settings.language === 'es'
           ? 'Necesitas conexión a internet para descargar el audio.'
           : 'You need an internet connection to download the audio.'
       );
@@ -117,8 +146,8 @@ export default function HymnScreen() {
 
     if (!AUDIO_CACHE_DIR) {
       Alert.alert(
-        settings.language === 'es' ? 'Error' : 'Error',
-        settings.language === 'es' 
+        'Error',
+        settings.language === 'es'
           ? 'No se puede acceder al almacenamiento del dispositivo.'
           : 'Cannot access device storage.'
       );
@@ -128,37 +157,33 @@ export default function HymnScreen() {
     try {
       setIsDownloadingAudio(true);
       await ensureDirectoryExists(AUDIO_CACHE_DIR);
-
       const audioPath = `${AUDIO_CACHE_DIR}hymn_${hymn.numero}.mp3`;
-      
+
       const downloadResumable = FileSystem.createDownloadResumable(
         hymn.audio.url,
         audioPath,
         {},
-        (downloadProgress) => {
-          const progress = downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite;
-          setDownloadProgress(prev => ({ ...prev, audio: progress }));
+        (dp) => {
+          const p = dp.totalBytesExpectedToWrite > 0
+            ? dp.totalBytesWritten / dp.totalBytesExpectedToWrite
+            : 0;
+          setDownloadProgress(prev => ({ ...prev, audio: p }));
         }
       );
 
       const result = await downloadResumable.downloadAsync();
-      
       if (result) {
         setAudioDownloaded(true);
         Alert.alert(
           settings.language === 'es' ? '✓ Descargado' : '✓ Downloaded',
-          settings.language === 'es' 
-            ? 'El audio está disponible offline.'
-            : 'Audio is available offline.'
+          settings.language === 'es' ? 'Audio disponible offline.' : 'Audio available offline.'
         );
       }
     } catch (error) {
       console.error('Error downloading audio:', error);
       Alert.alert(
-        settings.language === 'es' ? 'Error' : 'Error',
-        settings.language === 'es' 
-          ? 'No se pudo descargar el audio.'
-          : 'Could not download audio.'
+        'Error',
+        settings.language === 'es' ? 'No se pudo descargar el audio.' : 'Could not download audio.'
       );
     } finally {
       setIsDownloadingAudio(false);
@@ -167,13 +192,12 @@ export default function HymnScreen() {
   };
 
   const downloadPDF = async () => {
-    // 🔍 Verificar si las URLs están configuradas
     if (!isMediaConfigured()) {
       Alert.alert(
         settings.language === 'es' ? '⚠️ Configuración pendiente' : '⚠️ Configuration needed',
-        settings.language === 'es' 
-          ? 'Las URLs de descarga aún no están configuradas. Por favor contacta al desarrollador.'
-          : 'Download URLs are not configured yet. Please contact the developer.'
+        settings.language === 'es'
+          ? 'Las URLs de descarga aún no están configuradas.'
+          : 'Download URLs are not configured yet.'
       );
       return;
     }
@@ -181,50 +205,58 @@ export default function HymnScreen() {
     if (!isOnline) {
       Alert.alert(
         settings.language === 'es' ? 'Sin conexión' : 'No connection',
-        settings.language === 'es' 
+        settings.language === 'es'
           ? 'Necesitas conexión a internet para descargar el PDF.'
           : 'You need an internet connection to download the PDF.'
       );
       return;
     }
 
-    if (!hymn || !PDF_CACHE_DIR) return;
+    if (!hymn) return;
 
-    // 👇 Usa la URL configurada
+    // ✅ Fixed: show error instead of silent return
+    if (!PDF_CACHE_DIR) {
+      Alert.alert(
+        'Error',
+        settings.language === 'es'
+          ? 'No se puede acceder al almacenamiento del dispositivo.'
+          : 'Cannot access device storage.'
+      );
+      return;
+    }
+
     const pdfUrl = getPDFUrl(hymn.numero);
 
     try {
       setIsDownloadingPDF(true);
       await ensureDirectoryExists(PDF_CACHE_DIR);
-
       const pdfPath = `${PDF_CACHE_DIR}hymn_${hymn.numero}.pdf`;
-      
+
       const downloadResumable = FileSystem.createDownloadResumable(
         pdfUrl,
         pdfPath,
         {},
-        (downloadProgress) => {
-          const progress = downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite;
-          setDownloadProgress(prev => ({ ...prev, pdf: progress }));
+        (dp) => {
+          const p = dp.totalBytesExpectedToWrite > 0
+            ? dp.totalBytesWritten / dp.totalBytesExpectedToWrite
+            : 0;
+          setDownloadProgress(prev => ({ ...prev, pdf: p }));
         }
       );
 
       const result = await downloadResumable.downloadAsync();
-      
       if (result) {
         setPdfDownloaded(true);
         Alert.alert(
           settings.language === 'es' ? '✓ Descargado' : '✓ Downloaded',
-          settings.language === 'es' 
-            ? 'El PDF está disponible offline.'
-            : 'PDF is available offline.'
+          settings.language === 'es' ? 'PDF disponible offline.' : 'PDF available offline.'
         );
       }
     } catch (error) {
       console.error('Error downloading PDF:', error);
       Alert.alert(
-        settings.language === 'es' ? 'Error' : 'Error',
-        settings.language === 'es' 
+        'Error',
+        settings.language === 'es'
           ? 'No se pudo descargar el PDF. Verifica que el archivo exista en el servidor.'
           : 'Could not download PDF. Verify the file exists on the server.'
       );
@@ -236,112 +268,57 @@ export default function HymnScreen() {
 
   const handlePlayPause = async () => {
     if (!hymn) return;
-    if (!hymn.audio.url && !audioDownloaded) return;
 
-    try {
-      if (sound) {
-        const status = await sound.getStatusAsync();
-        if (status.isLoaded) {
-          if (isPlaying) {
-            await sound.pauseAsync();
-            setIsPlaying(false);
-          } else {
-            await sound.playAsync();
-            setIsPlaying(true);
-          }
-        }
-      } else {
-        setIsLoadingAudio(true);
-        
-        let audioUri: string;
-        if (audioDownloaded && AUDIO_CACHE_DIR) {
-          audioUri = `${AUDIO_CACHE_DIR}hymn_${hymn.numero}.mp3`;
-        } else if (!isOnline) {
-          Alert.alert(
-            settings.language === 'es' ? 'Sin conexión' : 'No connection',
-            settings.language === 'es' 
-              ? 'Descarga el audio primero para escucharlo offline.'
-              : 'Download the audio first to listen offline.'
-          );
-          setIsLoadingAudio(false);
-          return;
-        } else if (!hymn.audio.url) {
-          setIsLoadingAudio(false);
-          return;
-        } else {
-          audioUri = hymn.audio.url;
-        }
-
-        const { sound: newSound } = await Audio.Sound.createAsync(
-          { uri: audioUri },
-          { shouldPlay: true }
-        );
-        setSound(newSound);
-        setIsPlaying(true);
-        setIsLoadingAudio(false);
-        newSound.setOnPlaybackStatusUpdate((status) => {
-          if (status.isLoaded && status.didJustFinish) setIsPlaying(false);
-        });
-      }
-    } catch (error) {
-      console.error('Error playing audio:', error);
-      setIsLoadingAudio(false);
-      Alert.alert(
-        settings.language === 'es' ? 'Error' : 'Error',
-        settings.language === 'es' 
-          ? 'No se pudo reproducir el audio.'
-          : 'Could not play audio.'
-      );
+    // If this hymn is already in context, just toggle
+    if (isThisHymnActive) {
+      audio.togglePlayPause();
+      return;
     }
+
+    // Determine audio URI
+    let audioUri: string | null = null;
+
+    if (audioDownloaded && AUDIO_CACHE_DIR) {
+      audioUri = `${AUDIO_CACHE_DIR}hymn_${hymn.numero}.mp3`;
+    } else if (!isOnline) {
+      Alert.alert(
+        settings.language === 'es' ? 'Sin conexión' : 'No connection',
+        settings.language === 'es'
+          ? 'Descarga el audio primero para escucharlo offline.'
+          : 'Download the audio first to listen offline.'
+      );
+      return;
+    } else if (hymn.audio.url) {
+      audioUri = hymn.audio.url;
+    }
+
+    if (!audioUri) return;
+
+    const hymnData = hymn.idiomas[settings.language];
+    await audio.playHymn({
+      id: hymn.id,
+      numero: hymn.numero,
+      titulo: hymnData.titulo,
+      audioUri,
+    });
   };
 
   const openPDF = async () => {
     if (!pdfDownloaded && !isOnline) {
       Alert.alert(
         settings.language === 'es' ? 'Sin conexión' : 'No connection',
-        settings.language === 'es' 
+        settings.language === 'es'
           ? 'Descarga el PDF primero para verlo offline.'
           : 'Download the PDF first to view offline.'
       );
       return;
     }
-
-    // TODO: Implementar visor de PDF
     Alert.alert(
       settings.language === 'es' ? 'Abrir PDF' : 'Open PDF',
-      settings.language === 'es' 
-        ? `PDF del himno #${hymn?.numero} - Próximamente se implementará el visor`
+      settings.language === 'es'
+        ? `PDF del himno #${hymn?.numero} - Visor próximamente`
         : `Hymn #${hymn?.numero} PDF - Viewer coming soon`
     );
-  };
-
-  const navigateToHymn = (direction: 'prev' | 'next') => {
-    if (isAnimating.current) return;
-
-    const targetIndex = direction === 'prev' ? currentIndex - 1 : currentIndex + 1;
-
-    if (targetIndex < 0 || targetIndex >= hymns.length) {
-      Animated.spring(translateX, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 200,
-        friction: 15,
-      }).start();
-      return;
-    }
-
-    isAnimating.current = true;
-    const toValue = direction === 'prev' ? SCREEN_WIDTH : -SCREEN_WIDTH;
-
-    Animated.timing(translateX, {
-      toValue,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      translateX.setValue(0);
-      isAnimating.current = false;
-      router.replace(`/hymn/${hymns[targetIndex].id}`);
-    });
   };
 
   const panResponder = useRef(
@@ -369,12 +346,6 @@ export default function HymnScreen() {
     })
   ).current;
 
-  useEffect(() => {
-    return () => {
-      if (sound) sound.unloadAsync();
-    };
-  }, [sound]);
-
   if (!hymn) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -389,28 +360,24 @@ export default function HymnScreen() {
   const hymnIsFavorite = isFavorite(hymn.id);
 
   const getAudioStatus = () => {
-    if (isDownloadingAudio) {
-      return settings.language === 'es' 
-        ? `Descargando... ${Math.round(downloadProgress.audio * 100)}%`
-        : `Downloading... ${Math.round(downloadProgress.audio * 100)}%`;
-    }
+    if (isDownloadingAudio) return settings.language === 'es' ? 'Descargando...' : 'Downloading...';
     if (audioDownloaded) return settings.language === 'es' ? 'Disponible offline' : 'Available offline';
     if (!hymn.audio.tiene_audio) return settings.language === 'es' ? 'Próximamente' : 'Coming soon';
-    if (!isOnline) return settings.language === 'es' ? 'Sin conexión' : 'No connection';
-    if (isPlaying) return settings.language === 'es' ? 'Reproduciendo...' : 'Playing...';
+    if (isPlaying) return settings.language === 'es' ? 'Reproduciendo' : 'Playing';
     return settings.language === 'es' ? 'Toca para reproducir' : 'Tap to play';
   };
 
   const getPDFStatus = () => {
-    if (isDownloadingPDF) {
-      return settings.language === 'es' 
-        ? `Descargando... ${Math.round(downloadProgress.pdf * 100)}%`
-        : `Downloading... ${Math.round(downloadProgress.pdf * 100)}%`;
-    }
+    if (isDownloadingPDF) return settings.language === 'es' ? 'Descargando...' : 'Downloading...';
     if (pdfDownloaded) return settings.language === 'es' ? 'Disponible offline' : 'Available offline';
-    if (!isOnline) return settings.language === 'es' ? 'Sin conexión' : 'No connection';
     return settings.language === 'es' ? 'Toca para descargar' : 'Tap to download';
   };
+
+  const progress = duration > 0 ? position / duration : 0;
+
+  // Audio card border: only red if explicitly no audio available (not just offline)
+  const audioBorderColor = theme.border;
+  const pdfBorderColor = theme.border;
 
   return (
     <>
@@ -422,12 +389,17 @@ export default function HymnScreen() {
           headerTintColor: theme.primary,
           headerShadowVisible: false,
           headerRight: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              {!isOnline && <WifiOff size={20} color={theme.error} />}
-              <TouchableOpacity onPress={() => toggleFavorite(hymn.id)} style={{ marginRight: 8, padding: 8 }} activeOpacity={0.7}>
-                <Heart size={24} color={hymnIsFavorite ? theme.error : theme.primary} fill={hymnIsFavorite ? theme.error : 'transparent'} />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              onPress={() => toggleFavorite(hymn.id)}
+              style={{ marginRight: 8, padding: 8 }}
+              activeOpacity={0.7}
+            >
+              <Heart
+                size={24}
+                color={hymnIsFavorite ? theme.error : theme.primary}
+                fill={hymnIsFavorite ? theme.error : 'transparent'}
+              />
+            </TouchableOpacity>
           ),
         }}
       />
@@ -446,19 +418,30 @@ export default function HymnScreen() {
           </View>
         )}
 
-        <Animated.View style={[styles.animatedContainer, { transform: [{ translateX }] }]} {...panResponder.panHandlers}>
+        <Animated.View
+          style={[styles.animatedContainer, { transform: [{ translateX }] }]}
+          {...panResponder.panHandlers}
+        >
           <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             <SafeAreaView edges={['bottom']} style={styles.safeArea}>
               <View style={styles.header}>
-                <Text style={[styles.hymnNumber, { color: theme.primary, fontSize: fonts.hymnNumber }]}>{hymn.numero}</Text>
-                <Text style={[styles.hymnTitle, { color: theme.text, fontSize: fonts.title }]}>{hymnData.titulo}</Text>
-                <Text style={[styles.hymnAuthor, { color: theme.textSecondary, fontSize: fonts.base }]}>{hymnData.autor_letra}</Text>
+                <Text style={[styles.hymnNumber, { color: theme.primary, fontSize: fonts.hymnNumber }]}>
+                  {hymn.numero}
+                </Text>
+                <Text style={[styles.hymnTitle, { color: theme.text, fontSize: fonts.title }]}>
+                  {hymnData.titulo}
+                </Text>
+                <Text style={[styles.hymnAuthor, { color: theme.textSecondary, fontSize: fonts.base }]}>
+                  {hymnData.autor_letra}
+                </Text>
               </View>
 
               <View style={styles.lyricsContainer}>
                 {hymnData.versos.map((verso, index) => (
                   <View key={index} style={styles.verseContainer}>
-                    <Text style={[styles.verseText, { color: theme.text, fontSize: fonts.large, lineHeight: fonts.large * 1.6 }]}>{verso}</Text>
+                    <Text style={[styles.verseText, { color: theme.text, fontSize: fonts.large, lineHeight: fonts.large * 1.6 }]}>
+                      {verso}
+                    </Text>
                   </View>
                 ))}
                 {hymnData.coro && (
@@ -466,34 +449,118 @@ export default function HymnScreen() {
                     <Text style={[styles.chorusLabel, { color: theme.primary, fontSize: fonts.base }]}>
                       {settings.language === 'es' ? 'CORO' : 'CHORUS'}
                     </Text>
-                    <Text style={[styles.chorusText, { color: theme.text, fontSize: fonts.large, lineHeight: fonts.large * 1.6 }]}>{hymnData.coro}</Text>
+                    <Text style={[styles.chorusText, { color: theme.text, fontSize: fonts.large, lineHeight: fonts.large * 1.6 }]}>
+                      {hymnData.coro}
+                    </Text>
                   </View>
                 )}
               </View>
 
+              {/* AUDIO CARD */}
               <View style={styles.controlsContainer}>
-                <View style={[styles.audioContainer, { backgroundColor: theme.cardBackground, borderColor: !isOnline && !audioDownloaded ? theme.error : theme.border }]}>
-                  <TouchableOpacity
-                    style={[styles.playButton, { backgroundColor: hymn.audio.tiene_audio && (isOnline || audioDownloaded) ? theme.primary : theme.border }]}
-                    onPress={handlePlayPause}
-                    disabled={isLoadingAudio || (!hymn.audio.tiene_audio && !audioDownloaded)}
-                  >
-                    {isLoadingAudio ? <ActivityIndicator color="#FFFFFF" size="small" /> : isPlaying ? <Pause color="#FFFFFF" size={24} fill="#FFFFFF" /> : <Play color="#FFFFFF" size={24} fill="#FFFFFF" />}
-                  </TouchableOpacity>
-                  <View style={styles.audioInfo}>
-                    <Text style={[styles.audioTitle, { color: theme.text, fontSize: fonts.base }]}>
-                      {settings.language === 'es' ? 'Pista de Audio' : 'Audio Track'}
-                    </Text>
-                    <Text style={[styles.audioStatus, { color: !isOnline && !audioDownloaded ? theme.error : theme.textSecondary, fontSize: fonts.base }]}>
-                      {getAudioStatus()}
-                    </Text>
+                <View style={[styles.audioContainer, { backgroundColor: theme.cardBackground, borderColor: audioBorderColor }]}>
+                  {/* Top row: play button + info + download */}
+                  <View style={styles.audioTopRow}>
+                    <TouchableOpacity
+                      style={[
+                        styles.playButton,
+                        { backgroundColor: hymn.audio.tiene_audio && (isOnline || audioDownloaded) ? theme.primary : theme.border }
+                      ]}
+                      onPress={handlePlayPause}
+                      disabled={isLoadingAudio || (!hymn.audio.tiene_audio && !audioDownloaded)}
+                    >
+                      {isLoadingAudio
+                        ? <ActivityIndicator color="#FFFFFF" size="small" />
+                        : isPlaying
+                          ? <Pause color="#FFFFFF" size={24} fill="#FFFFFF" />
+                          : <Play color="#FFFFFF" size={24} fill="#FFFFFF" />
+                      }
+                    </TouchableOpacity>
+
+                    <View style={styles.audioInfo}>
+                      <Text style={[styles.audioTitle, { color: theme.text, fontSize: fonts.base }]}>
+                        {settings.language === 'es' ? 'Pista de Audio' : 'Audio Track'}
+                      </Text>
+                      <Text style={[styles.audioStatus, { color: theme.textSecondary, fontSize: fonts.base }]}>
+                        {getAudioStatus()}
+                      </Text>
+                    </View>
+
+                    {/* Download button with circular progress */}
+                    <TouchableOpacity
+                      style={styles.downloadButton}
+                      onPress={downloadAudio}
+                      disabled={!hymn.audio.tiene_audio || audioDownloaded || isDownloadingAudio || !isOnline}
+                    >
+                      {isDownloadingAudio ? (
+                        <CircularProgress
+                          progress={downloadProgress.audio}
+                          size={28}
+                          color={theme.primary}
+                          backgroundColor={theme.border}
+                        />
+                      ) : audioDownloaded ? (
+                        <CheckCircle color={theme.primary} size={22} fill={theme.primary} />
+                      ) : (
+                        <Download
+                          color={hymn.audio.tiene_audio && isOnline ? theme.primary : theme.textTertiary}
+                          size={22}
+                        />
+                      )}
+                    </TouchableOpacity>
                   </View>
-                  <TouchableOpacity style={styles.downloadButton} onPress={downloadAudio} disabled={!hymn.audio.tiene_audio || audioDownloaded || isDownloadingAudio || !isOnline}>
-                    {isDownloadingAudio ? <ActivityIndicator color={theme.primary} size="small" /> : audioDownloaded ? <CheckCircle color={theme.primary} size={20} fill={theme.primary} /> : <Download color={hymn.audio.tiene_audio && isOnline ? theme.primary : theme.textTertiary} size={20} />}
-                  </TouchableOpacity>
+
+                  {/* Progress bar row — only shown when this hymn is active */}
+                  {isThisHymnActive && (
+                    <View style={styles.progressSection}>
+                      <TouchableOpacity
+                        style={styles.progressTrackContainer}
+                        onPress={(e) => {
+                          // Simple seek on tap: calculate position from tap X
+                          // @ts-ignore
+                          const { locationX, target } = e.nativeEvent;
+                          // We'll use a ref for width; fallback to screen width - padding
+                          const barWidth = SCREEN_WIDTH - 48 - 48 - 48 - 40 - 16 - 32;
+                          const ratio = Math.max(0, Math.min(1, locationX / barWidth));
+                          audio.seekTo(ratio * duration);
+                        }}
+                        activeOpacity={1}
+                      >
+                        <View style={[styles.progressTrack, { backgroundColor: theme.border }]}>
+                          <View
+                            style={[
+                              styles.progressFill,
+                              { backgroundColor: theme.primary, width: `${progress * 100}%` }
+                            ]}
+                          />
+                          {/* Thumb */}
+                          <View
+                            style={[
+                              styles.progressThumb,
+                              { backgroundColor: theme.primary, left: `${progress * 100}%` }
+                            ]}
+                          />
+                        </View>
+                      </TouchableOpacity>
+                      <View style={styles.timeRow}>
+                        <Text style={[styles.timeText, { color: theme.textSecondary }]}>
+                          {formatTime(position)}
+                        </Text>
+                        <Text style={[styles.timeText, { color: theme.textSecondary }]}>
+                          {formatTime(duration)}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
                 </View>
 
-                <TouchableOpacity style={[styles.pdfContainer, { backgroundColor: theme.cardBackground, borderColor: !isOnline && !pdfDownloaded ? theme.error : theme.border }]} onPress={pdfDownloaded ? openPDF : downloadPDF} activeOpacity={0.7} disabled={isDownloadingPDF || (!isOnline && !pdfDownloaded)}>
+                {/* PDF CARD */}
+                <TouchableOpacity
+                  style={[styles.pdfContainer, { backgroundColor: theme.cardBackground, borderColor: pdfBorderColor }]}
+                  onPress={pdfDownloaded ? openPDF : downloadPDF}
+                  activeOpacity={0.7}
+                  disabled={isDownloadingPDF}
+                >
                   <View style={[styles.pdfIcon, { backgroundColor: theme.primary }]}>
                     <FileMusic color="#FFFFFF" size={24} />
                   </View>
@@ -501,11 +568,22 @@ export default function HymnScreen() {
                     <Text style={[styles.pdfTitle, { color: theme.text, fontSize: fonts.base }]}>
                       {settings.language === 'es' ? 'Partitura PDF' : 'Sheet Music PDF'}
                     </Text>
-                    <Text style={[styles.pdfStatus, { color: !isOnline && !pdfDownloaded ? theme.error : theme.textSecondary, fontSize: fonts.base }]}>
+                    <Text style={[styles.pdfStatus, { color: theme.textSecondary, fontSize: fonts.base }]}>
                       {getPDFStatus()}
                     </Text>
                   </View>
-                  {isDownloadingPDF ? <ActivityIndicator color={theme.primary} size="small" /> : pdfDownloaded ? <CheckCircle color={theme.primary} size={20} fill={theme.primary} /> : <Download color={isOnline ? theme.primary : theme.textTertiary} size={20} />}
+                  {isDownloadingPDF ? (
+                    <CircularProgress
+                      progress={downloadProgress.pdf}
+                      size={28}
+                      color={theme.primary}
+                      backgroundColor={theme.border}
+                    />
+                  ) : pdfDownloaded ? (
+                    <CheckCircle color={theme.primary} size={22} fill={theme.primary} />
+                  ) : (
+                    <Download color={isOnline ? theme.primary : theme.textTertiary} size={22} />
+                  )}
                 </TouchableOpacity>
               </View>
 
@@ -542,17 +620,93 @@ const styles = StyleSheet.create({
   chorusLabel: { fontWeight: '700' as const, marginBottom: 12, letterSpacing: 1 },
   chorusText: { fontWeight: '500' as const },
   controlsContainer: { marginBottom: 24, gap: 12 },
-  audioContainer: { flexDirection: 'row' as const, alignItems: 'center' as const, padding: 16, borderRadius: 16, borderWidth: 1 },
-  playButton: { width: 48, height: 48, borderRadius: 24, alignItems: 'center' as const, justifyContent: 'center' as const, marginRight: 16 },
+
+  // Audio card
+  audioContainer: {
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden' as const,
+  },
+  audioTopRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    padding: 16,
+  },
+  playButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    marginRight: 16,
+  },
   audioInfo: { flex: 1 },
   audioTitle: { fontWeight: '600' as const, marginBottom: 4 },
   audioStatus: { fontWeight: '400' as const },
-  downloadButton: { width: 40, height: 40, alignItems: 'center' as const, justifyContent: 'center' as const },
-  pdfContainer: { flexDirection: 'row' as const, alignItems: 'center' as const, padding: 16, borderRadius: 16, borderWidth: 1 },
-  pdfIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center' as const, justifyContent: 'center' as const, marginRight: 16 },
+  downloadButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+
+  // Progress bar inside audio card
+  progressSection: {
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+  },
+  progressTrackContainer: {
+    paddingVertical: 6,
+  },
+  progressTrack: {
+    height: 3,
+    borderRadius: 2,
+    position: 'relative' as const,
+    overflow: 'visible' as const,
+  },
+  progressFill: {
+    height: 3,
+    borderRadius: 2,
+    maxWidth: '100%',
+  },
+  progressThumb: {
+    position: 'absolute' as const,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    top: -4.5,
+    marginLeft: -6,
+  },
+  timeRow: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    marginTop: 4,
+  },
+  timeText: {
+    fontSize: 11,
+    fontWeight: '400' as const,
+  },
+
+  // PDF card
+  pdfContainer: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  pdfIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    marginRight: 16,
+  },
   pdfInfo: { flex: 1 },
   pdfTitle: { fontWeight: '600' as const, marginBottom: 4 },
   pdfStatus: { fontWeight: '400' as const },
+
   footer: { paddingBottom: 48, alignItems: 'center' as const },
   footerText: { fontWeight: '400' as const, fontStyle: 'italic' as const },
 });

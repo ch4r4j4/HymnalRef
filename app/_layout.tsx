@@ -10,15 +10,6 @@ SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
-function RootLayoutNav() {
-  return (
-    <Stack screenOptions={{ headerBackTitle: "Back" }}>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="hymn/[id]" options={{ presentation: "card" }} />
-    </Stack>
-  );
-}
-
 export default function RootLayout() {
   useEffect(() => {
     SplashScreen.hideAsync();
@@ -29,7 +20,9 @@ export default function RootLayout() {
       <SettingsProvider>
         <FavoritesProvider>
           <GestureHandlerRootView style={{ flex: 1 }}>
-            <RootLayoutNav />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            </Stack>
           </GestureHandlerRootView>
         </FavoritesProvider>
       </SettingsProvider>

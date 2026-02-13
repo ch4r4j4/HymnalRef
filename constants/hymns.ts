@@ -60,8 +60,8 @@ export const hymns: Hymn[] = [
     temas: ["adoración", "comunión", "iglesia", "sacrificio"],
     palabras_clave: ["jesús", "cruz", "salvación", "amor", "espíritu santo"],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_8.mp3"
     }
   },
   {

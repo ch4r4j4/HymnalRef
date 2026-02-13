@@ -15,14 +15,25 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "app.rork.himnario-recurso-digital"
+      "bundleIdentifier": "app.rork.himnario-recurso-digital",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "app.rork.himnario_recurso_digital"
+      "package": "app.rork.himnario_recurso_digital",
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "favicon": "./assets/images/favicon.png"

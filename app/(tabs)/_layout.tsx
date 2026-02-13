@@ -53,6 +53,14 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => <Settings size={size} color={color} />,
         }}
       />
+      {/* hymn/[id] vive dentro de tabs pero oculto del tab bar */}
+      <Tabs.Screen
+        name="hymn/[id]"
+        options={{
+          href: null,
+          headerShown: false,
+        }}
+      />
     </Tabs>
   );
 }

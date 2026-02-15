@@ -415,12 +415,30 @@ export default function HymnScreen() {
           <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             <SafeAreaView edges={['bottom']} style={styles.safeArea}>
               <View style={styles.header}>
+                <Text style={[styles.hymnNumber, { color: theme.primary, fontSize: fonts.hymnNumber }]}>
+                  {hymn.numero}
+                </Text>
                 <Text style={[styles.hymnTitle, { color: theme.text, fontSize: fonts.title }]}>
                   {hymn.titulo}
+                </Text>
+                <Text style={[styles.hymnAuthor, { color: theme.textSecondary, fontSize: fonts.base }]}>
+                  {hymn.autor_letra}
                 </Text>
               </View>
 
               <View style={styles.lyricsContainer}>
+                {/* CORO posicion 0 — va ANTES de todos los versos */}
+                {hymn.coro && hymn.posicion_coro === 0 && (
+                  <View style={[styles.chorusContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                    <Text style={[styles.chorusLabel, { color: theme.primary, fontSize: fonts.base }]}>
+                      CORO
+                    </Text>
+                    <Text style={[styles.verseText, { color: theme.text, fontSize: fonts.large, lineHeight: fonts.large * 1.6, fontStyle: 'italic' as const }]}>
+                      {hymn.coro}
+                    </Text>
+                  </View>
+                )}
+
                 {hymn.versos.map((verso, index) => (
                   <View key={`verse-${index}`}>
                     <View style={styles.verseContainer}>
@@ -428,8 +446,12 @@ export default function HymnScreen() {
                         {verso}
                       </Text>
                     </View>
+                    {/* CORO después del verso N (posicion_coro es 1-based) */}
                     {hymn.coro && hymn.posicion_coro === index + 1 && (
-                      <View style={styles.verseContainer}>
+                      <View style={[styles.chorusContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                        <Text style={[styles.chorusLabel, { color: theme.primary, fontSize: fonts.base }]}>
+                          CORO
+                        </Text>
                         <Text style={[styles.verseText, { color: theme.text, fontSize: fonts.large, lineHeight: fonts.large * 1.6, fontStyle: 'italic' as const }]}>
                           {hymn.coro}
                         </Text>
@@ -437,15 +459,13 @@ export default function HymnScreen() {
                     )}
                   </View>
                 ))}
-                {hymn.coro && hymn.posicion_coro === 0 && (
-                  <View style={[styles.verseContainer, { marginBottom: 24 }]}>
-                    <Text style={[styles.verseText, { color: theme.text, fontSize: fonts.large, lineHeight: fonts.large * 1.6, fontStyle: 'italic' as const }]}>
-                      {hymn.coro}
-                    </Text>
-                  </View>
-                )}
+
+                {/* CORO posicion null — va al FINAL */}
                 {hymn.coro && hymn.posicion_coro === null && (
-                  <View style={styles.verseContainer}>
+                  <View style={[styles.chorusContainer, { backgroundColor: theme.cardBackground, borderColor: theme.border }]}>
+                    <Text style={[styles.chorusLabel, { color: theme.primary, fontSize: fonts.base }]}>
+                      CORO
+                    </Text>
                     <Text style={[styles.verseText, { color: theme.text, fontSize: fonts.large, lineHeight: fonts.large * 1.6, fontStyle: 'italic' as const }]}>
                       {hymn.coro}
                     </Text>
@@ -570,10 +590,24 @@ export default function HymnScreen() {
                   <FileMusic color={theme.primary} size={20} />
                 </TouchableOpacity>
               </View>
+
+              <View style={styles.footer}>
+                <Text style={[styles.footerText, { color: theme.textTertiary, fontSize: fonts.base }]}>
+                  Música: {hymn.autor_musica}
+                </Text>
+              </View>
             </SafeAreaView>
           </ScrollView>
         </Animated.View>
       </View>
+
+      {/* Sheet Music Viewer — renders as full-screen modal, sits above content but below tab bar */}
+      {/*<SheetMusicViewer
+        visible={sheetMusicVisible}
+        onClose={() => setSheetMusicVisible(false)}
+        hymnNumber={hymn.numero}
+        isOnline={isOnline}
+      />*/}
     </>
   );
 }
@@ -594,8 +628,17 @@ const styles = StyleSheet.create({
   lyricsContainer: { marginBottom: 32 },
   verseContainer: { marginBottom: 24 },
   verseText: { fontWeight: '400' as const },
-  chorusContainer: { padding: 20, borderRadius: 12, marginTop: 8, marginBottom: 24 },
-  chorusLabel: { fontWeight: '700' as const, marginBottom: 12, letterSpacing: 1 },
+  chorusContainer: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 24,
+  },
+  chorusLabel: {
+    fontWeight: '700' as const,
+    marginBottom: 8,
+    letterSpacing: 1.5,
+  },
   chorusText: { fontWeight: '500' as const },
   controlsContainer: { marginBottom: 24, gap: 12 },
 

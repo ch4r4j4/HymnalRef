@@ -16721,8 +16721,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_752.mp3"
     }
   },
   {
@@ -16741,8 +16741,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_753.mp3"
     }
   },
   {
@@ -16764,8 +16764,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_754.mp3"
     }
   },
   {
@@ -16784,8 +16784,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_755.mp3"
     }
   },
   {
@@ -16806,8 +16806,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_756.mp3"
     }
   },
   {
@@ -16826,8 +16826,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_757.mp3"
     }
   },
   {
@@ -16913,8 +16913,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_761.mp3"
     }
   },
   {
@@ -16935,8 +16935,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_762.mp3"
     }
   },
   {
@@ -16957,8 +16957,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_763.mp3"
     }
   },
   {
@@ -16980,8 +16980,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_764.mp3"
     }
   },
   {
@@ -17003,8 +17003,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_765.mp3"
     }
   },
   {
@@ -17026,8 +17026,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_766.mp3"
     }
   },
   {
@@ -17047,8 +17047,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_767.mp3"
     }
   },
   {
@@ -17070,8 +17070,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_768.mp3"
     }
   },
   {
@@ -17092,8 +17092,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_769.mp3"
     }
   },
   {
@@ -17155,8 +17155,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_772.mp3"
     }
   },
   {
@@ -17181,8 +17181,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_773.mp3"
     }
   },
   {
@@ -17246,8 +17246,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_776.mp3"
     }
   },
   {
@@ -17313,8 +17313,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_779.mp3"
     }
   },
   {
@@ -17337,8 +17337,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_780.mp3"
     }
   },
   {
@@ -17360,8 +17360,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_781.mp3"
     }
   },
   {
@@ -17381,8 +17381,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_782.mp3"
     }
   },
   {
@@ -17403,8 +17403,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_783.mp3"
     }
   },
   {
@@ -17424,8 +17424,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_784.mp3"
     }
   },
   {
@@ -17446,8 +17446,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_785.mp3"
     }
   },
   {
@@ -17468,8 +17468,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_786.mp3"
     }
   },
   {
@@ -17489,8 +17489,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_787.mp3"
     }
   },
   {
@@ -17511,8 +17511,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_788.mp3"
     }
   },
   {
@@ -17555,8 +17555,8 @@ export const hymns: Hymn[] = [
     temas: [],
     palabras_clave: [],
     audio: {
-      tiene_audio: false,
-      url: null
+      tiene_audio: true,
+      url: "https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/audio/hymn_790.mp3"
     }
   },
   {

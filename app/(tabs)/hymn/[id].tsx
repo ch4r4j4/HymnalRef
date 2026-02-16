@@ -414,15 +414,9 @@ export default function HymnScreen() {
         >
           <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             <SafeAreaView edges={['bottom']} style={styles.safeArea}>
-              <View style={styles.header}>
-                <Text style={[styles.hymnNumber, { color: theme.primary, fontSize: fonts.hymnNumber }]}>
-                  {hymn.numero}
-                </Text>
+              <View style={styles.header}>                
                 <Text style={[styles.hymnTitle, { color: theme.text, fontSize: fonts.title }]}>
                   {hymn.titulo}
-                </Text>
-                <Text style={[styles.hymnAuthor, { color: theme.textSecondary, fontSize: fonts.base }]}>
-                  {hymn.autor_letra}
                 </Text>
               </View>
 
@@ -589,12 +583,6 @@ export default function HymnScreen() {
                   </View>
                   <FileMusic color={theme.primary} size={20} />
                 </TouchableOpacity>
-              </View>
-
-              <View style={styles.footer}>
-                <Text style={[styles.footerText, { color: theme.textTertiary, fontSize: fonts.base }]}>
-                  Música: {hymn.autor_musica}
-                </Text>
               </View>
             </SafeAreaView>
           </ScrollView>

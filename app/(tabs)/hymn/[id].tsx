@@ -16,6 +16,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import NetInfo from '@react-native-community/netinfo';
 import * as FileSystem from 'expo-file-system';
 import { getPDFUrl, isMediaConfigured } from '@/constants/media-config';
+import { SheetMusicViewer } from '@/components/Sheetmusicviewer';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SWIPE_THRESHOLD = 80;
@@ -590,12 +591,12 @@ export default function HymnScreen() {
       </View>
 
       {/* Sheet Music Viewer — renders as full-screen modal, sits above content but below tab bar */}
-      {/*<SheetMusicViewer
+      <SheetMusicViewer
         visible={sheetMusicVisible}
         onClose={() => setSheetMusicVisible(false)}
         hymnNumber={hymn.numero}
         isOnline={isOnline}
-      />*/}
+      />
     </>
   );
 }

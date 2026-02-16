@@ -40,3 +40,7 @@ export const getPDFUrl = (hymnNumber: number): string => {
 export const isMediaConfigured = (): boolean => {
   return !CLOUDFLARE_R2_BASE_URL.includes('tu-bucket-aqui');
 };
+
+export const getPNGUrl = (numero: number): string => {
+  return `https://pub-655e19ffdd104042b2e1bebc1202dd02.r2.dev/partituraspng/hymn_${numero}.png`;
+};

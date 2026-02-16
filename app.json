@@ -3,7 +3,7 @@
     "name": "Himnario Recurso Digital",
     "slug": "himnario-recurso-digital",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "rork-app",
     "userInterfaceStyle": "automatic",

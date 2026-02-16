@@ -128,7 +128,7 @@ export default function SettingsScreen() {
 
           <View style={styles.footer}>
             <Text style={[styles.footerText, { color: theme.textTertiary, fontSize: fonts.base }]}>
-              Himnario Loores al Rey
+              Himnario LOAD
             </Text>
             <Text style={[styles.footerVersion, { color: theme.textTertiary, fontSize: fonts.base }]}>
               Versión 1.0
